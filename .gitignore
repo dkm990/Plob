@@ -1,6 +1,7 @@
 node_modules/
 *.log
 *.txt
+.claude/
 !fest-app/README.txt
 tmole-live.log
 localtunnel.log

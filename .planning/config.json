@@ -1,0 +1,11 @@
+{
+  "model_profile": "balanced",
+  "commit_docs": true,
+  "branching_strategy": "feature",
+  "phase_branch_template": "gsd/phase-{phase}-{slug}",
+  "research": true,
+  "plan_checker": true,
+  "verifier": true,
+  "parallelization": true,
+  "response_language": "ru"
+}
