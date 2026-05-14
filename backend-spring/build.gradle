@@ -1,0 +1,83 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.7'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.plans'
+version = '0.0.1-SNAPSHOT'
+description = 'Spring Boot backend scaffold for Plans'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+	implementation 'org.postgresql:postgresql'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testImplementation 'org.testcontainers:postgresql'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+	exclude '**/api/smoke/**'
+}
+
+tasks.register('coreSmokeTest', Test) {
+	description = 'Runs Spring REST core smoke test.'
+	group = 'verification'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform()
+	filter {
+		includeTestsMatching 'com.plans.backend.api.smoke.SpringCoreSmokeIntegrationTest'
+	}
+}
+
+tasks.register('realtimeSmokeTest', Test) {
+	description = 'Runs Spring realtime WebSocket smoke test.'
+	group = 'verification'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform()
+	filter {
+		includeTestsMatching 'com.plans.backend.api.smoke.SpringRealtimeSmokeIntegrationTest'
+	}
+}
+
+tasks.register('contentOpsSmokeTest', Test) {
+	description = 'Runs Spring content ops smoke test.'
+	group = 'verification'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform()
+	filter {
+		includeTestsMatching 'com.plans.backend.api.smoke.SpringContentOpsSmokeIntegrationTest'
+	}
+}
+
+tasks.register('fullSpringSmokeTest', Test) {
+	description = 'Runs full Spring network smoke test over real HTTP/WebSocket.'
+	group = 'verification'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform()
+	filter {
+		includeTestsMatching 'com.plans.backend.api.smoke.FullSpringSmokeIntegrationTest'
+	}
+}
