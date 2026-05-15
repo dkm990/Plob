@@ -407,6 +407,15 @@ export const ProfileScreen = () => {
                   </View>
                 </Pressable>
               </Tilt>
+              <Tilt maxTilt={3} liftOnHover={2}>
+                {/* TODO: Venue subscriptions/places — API not yet available */}
+                <View style={[s.menuItem, s.menuItemDisabled]}>
+                  <View style={s.menuRow}>
+                    <Text style={[s.menuText, s.menuTextMuted]}>Места</Text>
+                    <Text style={s.menuBadgeMuted}>Скоро</Text>
+                  </View>
+                </View>
+              </Tilt>
               <Pressable style={s.menuItem} onPress={logout} activeScale={0.97}>
                 <Text style={[s.menuText, { color: theme.colors.error, fontWeight: '700' }]}>Выйти</Text>
               </Pressable>
@@ -453,6 +462,9 @@ const s = StyleSheet.create({
     ...Platform.select({ web: { backdropFilter: 'blur(10px)' } as any }),
   },
   menuText: { ...theme.typography.body, color: theme.colors.textPrimary, fontWeight: '600' },
+  menuTextMuted: { color: theme.colors.textTertiary },
+  menuItemDisabled: { opacity: 0.6 },
+  menuBadgeMuted: { ...theme.typography.captionBold, color: theme.colors.textTertiary, fontStyle: 'italic' },
   menuRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 },
   badgePill: { backgroundColor: theme.colors.primaryLight + '22', borderRadius: theme.borderRadius.full, paddingHorizontal: theme.spacing.sm, paddingVertical: 2, minWidth: 24, alignItems: 'center' },
   badgeGroup: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },

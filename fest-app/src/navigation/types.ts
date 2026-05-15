@@ -8,8 +8,9 @@ export type HomeStackParamList = {
 export type PlansStackParamList = {
   PlansList: undefined;
   PlanDetails: { planId: string };
+  // TODO: Groups are out of current scope; route retained to avoid breaking navigation types
   GroupDetails: { groupId: string };
-  CreatePlan: { preselectedGroupIds?: string[]; preselectedFriendIds?: string[]; activityType?: string; title?: string };
+  CreatePlan: { preselectedFriendIds?: string[]; activityType?: string; title?: string };
 };
 
 export type RootStackParamList = {

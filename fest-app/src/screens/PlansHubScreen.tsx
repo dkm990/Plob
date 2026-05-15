@@ -4,17 +4,18 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../theme';
 import { usePlansStore } from '../stores/plansStore';
 import { useAuthStore } from '../stores/authStore';
-import { useGroupsStore } from '../stores/groupsStore';
+// TODO: Groups are out of current scope; backend cleanup deferred
+// import { useGroupsStore } from '../stores/groupsStore';
 import { useInvitationsStore } from '../stores/invitationsStore';
 import { formatDateShort } from '../utils/dates';
 import { EmptyState } from '../components/EmptyState';
 import { ScreenContainer } from '../components/ScreenContainer';
 import type { PlansStackParamList } from '../navigation/types';
-import type { Plan, Group, Invitation } from '../types';
+import type { Plan, Invitation } from '../types';
 import { Aurora, FadeIn, Pressable, Tilt, Badge, TabIndicator, Tab } from '../motion';
 
 type Props = NativeStackScreenProps<PlansStackParamList, 'PlansList'>;
-type HubSection = 'active' | 'invitations' | 'groups' | 'past';
+type HubSection = 'active' | 'invitations' | 'past';
 
 const STATUS_LABELS: Record<string, string> = {
   going: 'Иду',
@@ -35,10 +36,6 @@ export const PlansHubScreen = ({ navigation }: Props) => {
   const plansLoading = usePlansStore((s) => s.loading);
   const plansError = usePlansStore((s) => s.error);
   const userId = useAuthStore((s) => s.user?.id) ?? '';
-  const groups = useGroupsStore((s) => s.groups);
-  const groupsLoading = useGroupsStore((s) => s.loading);
-  const groupsError = useGroupsStore((s) => s.error);
-  const fetchGroups = useGroupsStore((s) => s.fetchGroups);
   const {
     invitations,
     loading: invLoading,
@@ -54,8 +51,7 @@ export const PlansHubScreen = ({ navigation }: Props) => {
   React.useEffect(() => {
     fetchMyPlans();
     fetchInvitations();
-    fetchGroups();
-  }, [fetchMyPlans, fetchInvitations, fetchGroups]);
+  }, [fetchMyPlans, fetchInvitations]);
 
   const handleAccept = async (id: string) => {
     if (accepting) return;
@@ -80,7 +76,6 @@ export const PlansHubScreen = ({ navigation }: Props) => {
   const sections: { key: HubSection; label: string; count: number }[] = [
     { key: 'active', label: 'Активные', count: activePlans.length },
     { key: 'invitations', label: 'Приглашения', count: pendingInvitations.length },
-    { key: 'groups', label: 'Группы', count: groups.length },
     { key: 'past', label: 'Прошедшие', count: pastPlans.length },
   ];
 
@@ -157,13 +152,9 @@ export const PlansHubScreen = ({ navigation }: Props) => {
           {section === 'invitations' && invError ? (
             <Text style={s.errorBanner}>{invError}</Text>
           ) : null}
-          {section === 'groups' && groupsError ? (
-            <Text style={s.errorBanner}>{groupsError}</Text>
-          ) : null}
 
           {(section === 'active' && plansLoading && activePlans.length === 0) ||
-          (section === 'invitations' && invLoading && pendingInvitations.length === 0) ||
-          (section === 'groups' && groupsLoading && groups.length === 0) ? (
+          (section === 'invitations' && invLoading && pendingInvitations.length === 0) ? (
             <View style={s.loader}>
               <ActivityIndicator size="large" color={theme.colors.primary} />
             </View>
@@ -207,8 +198,6 @@ export const PlansHubScreen = ({ navigation }: Props) => {
                       onOpen={() => {
                         if (item.type === 'plan' && item.plan)
                           navigation.navigate('PlanDetails', { planId: item.target_id });
-                        if (item.type === 'group')
-                          navigation.navigate('GroupDetails', { groupId: item.target_id });
                       }}
                     />
                   )}
@@ -218,27 +207,6 @@ export const PlansHubScreen = ({ navigation }: Props) => {
                       icon="📨"
                       title="Входящих приглашений нет"
                       body="Друзья позовут — тут появятся"
-                    />
-                  }
-                />
-              )}
-              {section === 'groups' && (
-                <FlatList
-                  data={groups}
-                  keyExtractor={(g) => g.id}
-                  renderItem={({ item, index }) => (
-                    <GroupCard
-                      index={index}
-                      group={item}
-                      onPress={() => navigation.navigate('GroupDetails', { groupId: item.id })}
-                    />
-                  )}
-                  contentContainerStyle={s.list}
-                  ListEmptyComponent={
-                    <EmptyState
-                      icon="👥"
-                      title="Групп пока нет"
-                      body="Группы помогают собирать компанию под одно событие"
                     />
                   }
                 />
@@ -364,25 +332,6 @@ const InvitationCard = ({
             <Text style={s.declineBtnText}>{declining ? '...' : 'Отклонить'}</Text>
           </Pressable>
         </View>
-      </Pressable>
-    </Tilt>
-  </FadeIn>
-);
-
-const GroupCard = ({
-  group,
-  onPress,
-  index,
-}: {
-  group: Group;
-  onPress: () => void;
-  index: number;
-}) => (
-  <FadeIn delay={index * 55} direction="up" distance={14}>
-    <Tilt style={s.card}>
-      <Pressable style={s.cardInner} onPress={onPress} activeScale={0.98}>
-        <Text style={s.cardTitle}>{group.name}</Text>
-        <Text style={s.cardMeta}>{group.members?.length ?? 0} чел.</Text>
       </Pressable>
     </Tilt>
   </FadeIn>

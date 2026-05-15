@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TextInput, Switch, Platform, Alert 
 import { theme } from '../theme';
 import { useAuthStore } from '../stores/authStore';
 import { usePlansStore } from '../stores/plansStore';
-import { useGroupsStore } from '../stores/groupsStore';
+// TODO: Groups are out of current scope; backend cleanup deferred
+// import { useGroupsStore } from '../stores/groupsStore';
 import { useFriendsStore } from '../stores/friendsStore';
 import { ACTIVITY_LABELS, type ActivityType } from '../types';
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -24,7 +25,6 @@ interface Props {
   linkedEventTime?: string;
   linkedEventStartsAt?: string;
   onDone: (newPlanId: string) => void;
-  preselectedGroupIds?: string[];
 }
 
 type StepKey = 'details' | 'people' | 'confirm';
@@ -46,22 +46,19 @@ const ACTIVITY_ICONS: Record<ActivityType, string> = {
   other: '✨',
 };
 
-export const CreatePlanForm = ({ linkedEventId, linkedEventTitle, linkedEventVenue, linkedEventTime, linkedEventStartsAt, onDone, preselectedGroupIds }: Props) => {
+export const CreatePlanForm = ({ linkedEventId, linkedEventTitle, linkedEventVenue, linkedEventTime, linkedEventStartsAt, onDone }: Props) => {
   const user = useAuthStore((s) => s.user);
   const apiCreatePlan = usePlansStore((s) => s.apiCreatePlan);
   const planError = usePlansStore((s) => s.operationErrors.create ?? null);
   const clearOpError = usePlansStore((s) => s.clearOpError);
   const clearPlanError = React.useCallback(() => clearOpError('create'), [clearOpError]);
-  const groups = useGroupsStore((s) => s.groups);
-  const fetchGroups = useGroupsStore((s) => s.fetchGroups);
   const { friends: apiFriends, fetchFriends } = useFriendsStore();
 
   const isFromEvent = !!linkedEventId;
 
   useEffect(() => {
     fetchFriends();
-    fetchGroups();
-  }, [fetchFriends, fetchGroups]);
+  }, [fetchFriends]);
 
   const [activityType, setActivityType] = useState<ActivityType>(isFromEvent ? 'other' : 'cinema');
   const [title, setTitle] = useState(linkedEventTitle ?? '');
@@ -71,47 +68,21 @@ export const CreatePlanForm = ({ linkedEventId, linkedEventTitle, linkedEventVen
   const [preMeetPlace, setPreMeetPlace] = useState('');
   const [preMeetTime, setPreMeetTime] = useState('');
   const [friends, setFriends] = useState<FriendItem[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(preselectedGroupIds?.[0] ?? null);
-  const [step, setStep] = useState<StepKey>(isFromEvent || !!preselectedGroupIds?.length ? 'people' : 'details');
+  const [step, setStep] = useState<StepKey>(isFromEvent ? 'people' : 'details');
   const [submitting, setSubmitting] = useState(false);
   const [confettiTrigger, setConfettiTrigger] = useState(false);
   const [stepperWidth, setStepperWidth] = useState(0);
 
   useEffect(() => {
-    setFriends((prev) => {
-      const selectedIds = new Set(prev.filter((friend) => friend.selected).map((friend) => friend.id));
-
-      if (selectedIds.size === 0 && preselectedGroupIds?.length) {
-        preselectedGroupIds.forEach((gid) => {
-          const group = groups.find((item) => item.id === gid);
-          (group?.members ?? []).forEach((member) => {
-            if (member.user_id !== user?.id) selectedIds.add(member.user_id);
-          });
-        });
-      }
-
-      return apiFriends.map((apiFriend) => ({
-        id: apiFriend.id,
-        name: apiFriend.name,
-        selected: selectedIds.has(apiFriend.id),
-      }));
-    });
-  }, [apiFriends, groups, preselectedGroupIds, user?.id]);
+    setFriends(apiFriends.map((apiFriend) => ({
+      id: apiFriend.id,
+      name: apiFriend.name,
+      selected: false,
+    })));
+  }, [apiFriends]);
 
   const toggleFriend = (id: string) => {
     setFriends((prev) => prev.map((f) => f.id === id ? { ...f, selected: !f.selected } : f));
-  };
-
-  const selectGroup = (groupId: string) => {
-    if (selectedGroupId === groupId) {
-      setSelectedGroupId(null);
-      setFriends((prev) => prev.map((f) => ({ ...f, selected: false })));
-    } else {
-      setSelectedGroupId(groupId);
-      const group = groups.find((g) => g.id === groupId);
-      const memberIds = new Set((group?.members ?? []).filter((m) => m.user_id !== user?.id).map((m) => m.user_id));
-      setFriends((prev) => prev.map((f) => ({ ...f, selected: memberIds.has(f.id) })));
-    }
   };
 
   const selectedCount = friends.filter((f) => f.selected).length;
@@ -253,24 +224,6 @@ export const CreatePlanForm = ({ linkedEventId, linkedEventTitle, linkedEventVen
           {step === 'people' && (
             <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} keyboardShouldPersistTaps="handled">
               <Stagger step={45} baseDelay={160}>
-                {groups.length > 0 ? <Text style={s.label}>Группы</Text> : null}
-                {groups.map((g) => {
-                  const active = selectedGroupId === g.id;
-                  return (
-                    <Tilt key={g.id} style={s.groupTilt} maxTilt={3} liftOnHover={2}>
-                      <Pressable
-                        style={[s.groupCard, active && s.groupCardActive]}
-                        onPress={() => selectGroup(g.id)}
-                        activeScale={0.98}
-                      >
-                        <Text style={[s.groupName, active && s.groupNameActive]}>{g.name}</Text>
-                        <Text style={s.groupMeta}>{g.members?.length ?? 0} чел.</Text>
-                      </Pressable>
-                    </Tilt>
-                  );
-                })}
-                {groups.length > 0 ? <View style={s.divider} /> : null}
-
                 <Text style={s.label}>Друзья {selectedCount > 0 && <Text style={s.selectedCount}>({selectedCount})</Text>}</Text>
                 {friends.map((f) => (
                   <Tilt key={f.id} style={s.friendTilt} maxTilt={2} liftOnHover={1.5}>
@@ -407,13 +360,7 @@ const s = StyleSheet.create({
     ...Platform.select({ web: { padding: theme.spacing.md, marginBottom: theme.spacing.sm, backdropFilter: 'blur(8px)' } as any }),
   },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: theme.spacing.md },
-  groupTilt: {},
-  groupCard: { backgroundColor: 'rgba(255,255,255,0.78)', borderRadius: theme.borderRadius.lg, padding: theme.spacing.lg, marginBottom: theme.spacing.sm, borderWidth: 1, borderColor: 'rgba(108,92,231,0.15)' },
-  groupCardActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryLight + '22' },
-  groupName: { ...theme.typography.bodyBold, color: theme.colors.textPrimary },
-  groupNameActive: { color: theme.colors.primaryDark },
-  groupMeta: { ...theme.typography.caption, color: theme.colors.textTertiary, marginTop: theme.spacing.xs },
-  divider: { height: 1, backgroundColor: theme.colors.borderLight, marginVertical: theme.spacing.lg },
+  // TODO: Groups are out of current scope; group styles retained as dead code for now
   selectedCount: { ...theme.typography.caption, color: theme.colors.primary, fontWeight: '700' },
   friendTilt: {},
   friendRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.78)', borderRadius: theme.borderRadius.md, padding: theme.spacing.md, marginBottom: theme.spacing.sm, borderWidth: 1, borderColor: 'rgba(108,92,231,0.10)', ...Platform.select({ web: { paddingVertical: theme.spacing.sm } }) },

@@ -32,6 +32,7 @@
 
 ## Out of Scope
 
+- Groups (custom group chats / reusable circles) — **de-scoped from UI; backend tables/endpoints retained but not reachable from frontend**
 - Group chat (standalone)
 - Map view
 - Calendar entity

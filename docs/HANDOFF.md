@@ -17,6 +17,25 @@ Spring Boot in `backend-spring/` is now the current canonical backend. Fastify r
 
 Use `docs/SPRING_SWITCHOVER.md` for the canonical backend runbook and `docs/SPRING_MIGRATION_STATUS.md` for the migration/archive note.
 
+---
+
+## Checkpoint — Groups de-scoped from UI (2026-05-15)
+
+**Groups are out of current product scope.** Custom group chats and reusable groups are deferred indefinitely.
+
+What was changed (frontend only):
+- `PlansHubScreen` — Groups tab removed; `groupsStore` no longer called from this screen
+- `CreatePlanForm` / `CreatePlanScreen` / `CreatePlanFromEventScreen` — Group selection removed from plan creation flow; participants selected individually from friends list
+- `ProfileScreen` — No groups card; "Места" placeholder added for future venue subscriptions
+- `PublicProfileScreen` — Already had no groups references
+- `navigation/types.ts` — `preselectedGroupIds` removed from `CreatePlan` params; `GroupDetails` route retained to avoid type breakage
+
+What was NOT changed (intentionally):
+- Backend tables (`groups`, `group_members`), Flyway migrations, Spring controllers, and API endpoints are untouched
+- `groupsStore.ts` and `api/groups.ts` files retained as dead code (marked with TODO comments)
+- `GroupDetailsScreen.tsx` file retained (not reachable from UI, but kept to avoid breaking navigation types)
+- CI pipeline unchanged
+
 ### Canonical backend commands
 
 ```bash
